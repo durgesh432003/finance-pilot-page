@@ -4,8 +4,12 @@ import { ExpenseChart } from "@/components/ExpenseChart";
 import { BudgetProgress } from "@/components/BudgetProgress";
 import { RecentTransactions } from "@/components/RecentTransactions";
 import { FinancialInsights } from "@/components/FinancialInsights";
+import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -14,11 +18,16 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Financial Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Track your finances with ease</p>
+              <p className="text-sm text-muted-foreground">
+                Welcome back, {user?.user_metadata?.full_name || user?.email}
+              </p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Last updated</p>
-              <p className="text-sm font-medium">2 minutes ago</p>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Last updated</p>
+                <p className="text-sm font-medium">2 minutes ago</p>
+              </div>
+              <UserMenu />
             </div>
           </div>
         </div>
