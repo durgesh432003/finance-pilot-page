@@ -1,40 +1,79 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Wallet, CreditCard } from "lucide-react";
+import { DollarSign, Wallet, CreditCard, Target } from "lucide-react";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useGoals } from "@/hooks/useGoals";
+import { useMemo } from "react";
 
 export const DashboardOverview = () => {
+  const { data: transactions = [] } = useTransactions();
+  const { data: goals = [] } = useGoals();
+
+  const stats = useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const monthlyTransactions = transactions.filter(t => {
+      const date = new Date(t.date);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    });
+
+    const totalIncome = monthlyTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const totalExpenses = monthlyTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const balance = transactions.reduce((sum, t) => {
+      return t.type === 'income' ? sum + Number(t.amount) : sum - Number(t.amount);
+    }, 0);
+
+    const totalGoalsTarget = goals.reduce((sum, g) => sum + Number(g.target_amount), 0);
+    const totalGoalsCurrent = goals.reduce((sum, g) => sum + Number(g.current_amount), 0);
+    const goalsProgress = totalGoalsTarget > 0 ? (totalGoalsCurrent / totalGoalsTarget) * 100 : 0;
+
+    return {
+      balance,
+      monthlyIncome: totalIncome,
+      monthlyExpenses: totalExpenses,
+      goalsProgress,
+    };
+  }, [transactions, goals]);
+
   const overviewData = [
     {
       title: "Total Balance",
-      value: "$12,543.89",
-      change: "+2.5%",
-      changeType: "positive",
+      value: `$${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      change: stats.balance >= 0 ? "Positive" : "Negative",
+      changeType: stats.balance >= 0 ? "positive" : "negative",
       icon: Wallet,
       description: "Available balance"
     },
     {
       title: "Monthly Income",
-      value: "$4,250.00",
-      change: "+8.2%",
+      value: `$${stats.monthlyIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      change: "+100%",
       changeType: "positive",
       icon: DollarSign,
       description: "This month's earnings"
     },
     {
       title: "Monthly Expenses",
-      value: "$2,847.32",
-      change: "-3.1%",
-      changeType: "negative",
+      value: `$${stats.monthlyExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      change: "Tracked",
+      changeType: "neutral",
       icon: CreditCard,
       description: "This month's spending"
     },
     {
-      title: "Savings Goal",
-      value: "$8,500.00",
-      change: "68% complete",
+      title: "Goals Progress",
+      value: `${stats.goalsProgress.toFixed(1)}%`,
+      change: `${goals.length} active`,
       changeType: "neutral",
-      icon: DollarSign,
-      description: "Target: $12,500"
+      icon: Target,
+      description: "Overall progress"
     }
   ];
 
@@ -54,10 +93,10 @@ export const DashboardOverview = () => {
               <span
                 className={`text-xs font-medium ${
                   item.changeType === "positive"
-                    ? "text-green-600"
+                    ? "text-green-600 dark:text-green-400"
                     : item.changeType === "negative"
-                    ? "text-red-600"
-                    : "text-blue-600"
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-blue-600 dark:text-blue-400"
                 }`}
               >
                 {item.change}
