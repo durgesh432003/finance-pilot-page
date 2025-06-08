@@ -2,16 +2,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export const useTransactions = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const subscriptionRef = useRef<any>(null);
 
   // Set up real-time subscription
   useEffect(() => {
+    // Clean up existing subscription first
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+    }
+
     const channel = supabase
-      .channel('transactions-changes')
+      .channel('transactions-realtime-' + Math.random())
       .on(
         'postgres_changes',
         {
@@ -26,8 +32,12 @@ export const useTransactions = () => {
       )
       .subscribe();
 
+    subscriptionRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+      }
     };
   }, [queryClient]);
 
